@@ -47,26 +47,24 @@ class FileAudioStream(AudioStream):
         n_channels = self.stream.getnchannels()
         dtype = np.int16 if sample_width == 2 else np.int32 if sample_width == 4 else np.uint8
         audio_array = np.frombuffer(frames, dtype=dtype)
-        audio_array = audio_array.reshape(-1, n_channels)
 
-        if len(audio_array) == 0:
-            return audio_array
-
-        # Convert to float32
-        audio_array = audio_array.astype(np.float32) / 32768.0
-
-        if hasattr(self.source, "preserve_channels") and self.source.preserve_channels:
-            # For diarization purposes, return stereo
-            return audio_array
+        # Reshape the 1D buffer into (num_samples, num_channels)
+        # This works for mono (N,1) and stereo (N,2) etc.
+        # format_audio handles (N,1) by taking np.mean along axis=1 if not already 1D.
+        if len(audio_array) > 0:
+            audio_array = audio_array.reshape(-1, n_channels)
         else:
-            # For transcription, convert to mono by averaging channels
-            if audio_array.shape[1] > 1:
-                audio_array = np.mean(audio_array, axis=1)
+            # If no frames were read, return an empty float32 array.
+            # This ensures consistency and format_audio expects a non-empty array
+            # for certain calculations if resampling.
+            return np.array([], dtype=np.float32)
 
-            # Apply any additional formatting (resampling, etc.)
-            audio_array = format_audio(audio_array, from_sampling_rate=self.stream.getframerate())
+        formatted_audio = format_audio(
+            audio_array,
+            from_sampling_rate=self.stream.getframerate(),
+        )
 
-            return audio_array
+        return formatted_audio
 
     def has_more(self):
         current_frame = self.stream.tell()
