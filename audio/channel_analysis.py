@@ -1,8 +1,8 @@
-import numpy as np
-import librosa
 import os
+
+import librosa
 import matplotlib.pyplot as plt
-import shutil
+import numpy as np
 
 
 def analyze_channels(audio_file, tolerance=1e-6, dominance_threshold=0.8):
@@ -229,7 +229,7 @@ def rename_audio_file(file_path, channel_type):
         return None
 
     # Confirm with user
-    print(f"\nRename:")
+    print("\nRename:")
     print(f"  From: {os.path.basename(file_path)}")
     print(f"  To:   {new_filename}")
     confirm = input("Confirm rename? (y/n): ").strip().lower()
